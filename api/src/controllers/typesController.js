@@ -2,23 +2,29 @@ const axios = require("axios");
 const { Types } = require("../db");
 
 const getAllTypes = async () => {
-    // Función para obtener las dietas de la API y guardarlas en la base de datos
-    try {
-        const { results } = (await axios.get("https://pokeapi.co/api/v2/type")).data;
+    const allTypes = await Types.findAll();
+    // Si no tiene ningun tipo cargado en la BDD que las cree
+    
+    if (!allTypes.length) {
+        try {
 
-        const pokeTypes = results.map(pokemon => pokemon.name).flat(); // Obtener todos los tipos de dietas de las recetas
-        const uniqueTypes = Array.from(new Set(pokeTypes)); // Eliminar duplicados
+    // Obtener todos los tipos de dietas de las recetas
+            const { results } = (await axios.get("https://pokeapi.co/api/v2/type")).data;
+    // Limpio los tipos por nombre 
+            const pokeTypes = results.map((e) => {
+                return { name: e.name }
+            });
+    // Crear las dietas en la base de datos
+            await Types.bulkCreate(pokeTypes);
+            return allTypes;
 
-        // Crear las dietas en la base de datos
-        const createTypes = uniqueTypes.map(name => Types.create({ name }))
-        Promise.all(createTypes);
-
-        const allTypes = await Types.findAll();
-
-        console.log("Typos de pokemones precargadas en la base de datos:", uniqueTypes);
-        return allTypes
-    } catch (error) {
-        console.error("Error al obtener los types desde la API:", error.message);
+        } catch (error) {
+            console.error("Error al obtener los types desde la API:", error.message);
+        }
+    } else {
+    // Si ya tiene los tipos cargados en la BDD
+        console.log('Tipos cargados de la base de datos');
+        return allTypes;
     }
 };
 
